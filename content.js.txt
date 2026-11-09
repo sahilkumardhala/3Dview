@@ -1,0 +1,188 @@
+(() => {
+  if (window.__DOM_3D_ACTIVE__) {
+    window.teardown3DView?.();
+    return;
+  }
+  window.__DOM_3D_ACTIVE__ = true;
+
+  let state = {
+    rotX: 35,
+    rotY: -35,
+    zoom: 0.85,
+    spacing: 35,
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    timeSnapshots: [],
+    timeIndex: 0
+  };
+
+  const originalStyles = new Map();
+  document.documentElement.classList.add("dom-3d-active");
+
+  // Calculate DOM Depth & Stacking Levels
+  function getDepth(el) {
+    let depth = 0;
+    while (el.parentElement && el.parentElement !== document.body) {
+      depth++;
+      el = el.parentElement;
+    }
+    return depth;
+  }
+
+  const nodes = Array.from(document.body.querySelectorAll("*")).filter((el) => {
+    if (el.closest("#dom-3d-hud")) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).display !== "none";
+  });
+
+  function apply3DTransforms() {
+    nodes.forEach((el) => {
+      if (!originalStyles.has(el)) {
+        originalStyles.set(el, {
+          transform: el.style.transform,
+          backgroundColor: el.style.backgroundColor
+        });
+      }
+
+      const depth = getDepth(el);
+      const computedZ = parseInt(window.getComputedStyle(el).zIndex) || 0;
+      const totalDepth = depth + Math.max(0, computedZ);
+
+      // Extrude element into 3D space
+      el.classList.add("dom-3d-node");
+      el.style.transform = `translateZ(${totalDepth * state.spacing}px)`;
+
+      // Tint color according to layer depth
+      if (!el.style.backgroundColor || el.style.backgroundColor === "transparent") {
+        el.style.backgroundColor = `hsla(${210 + totalDepth * 15}, 70%, 50%, 0.12)`;
+      }
+    });
+  }
+
+  function updateCamera() {
+    document.body.style.transform = `scale(${state.zoom}) rotateX(${state.rotX}deg) rotateY(${state.rotY}deg)`;
+  }
+
+  // Mouse Orbit & Zoom Handlers
+  function onMouseDown(e) {
+    if (e.target.closest("#dom-3d-hud")) return;
+    state.isDragging = true;
+    state.startX = e.clientX;
+    state.startY = e.clientY;
+  }
+
+  function onMouseMove(e) {
+    if (!state.isDragging) return;
+    const deltaX = e.clientX - state.startX;
+    const deltaY = e.clientY - state.startY;
+
+    state.rotY += deltaX * 0.35;
+    state.rotX -= deltaY * 0.35;
+
+    state.startX = e.clientX;
+    state.startY = e.clientY;
+    updateCamera();
+  }
+
+  function onMouseUp() {
+    state.isDragging = false;
+  }
+
+  function onWheel(e) {
+    if (e.target.closest("#dom-3d-hud")) return;
+    e.preventDefault();
+    state.zoom += e.deltaY * -0.001;
+    state.zoom = Math.min(Math.max(0.2, state.zoom), 3);
+    updateCamera();
+  }
+
+  // Create HUD Controller
+  const hud = document.createElement("div");
+  hud.id = "dom-3d-hud";
+  hud.innerHTML = `
+    <h4>Spatial DOM Matrix</h4>
+    <div class="dom-3d-control-row">
+      <label>Layer Gap (Z):</label>
+      <input type="range" id="layer-gap" min="5" max="100" value="${state.spacing}">
+    </div>
+    <div class="dom-3d-control-row">
+      <label>Perspective Zoom:</label>
+      <input type="range" id="zoom-range" min="30" max="200" value="${state.zoom * 100}">
+    </div>
+    <div class="dom-3d-control-row">
+      <label>4D Time Pulse:</label>
+      <input type="range" id="pulse-slider" min="0" max="100" value="0">
+    </div>
+    <div class="dom-3d-hud-buttons">
+      <button class="dom-3d-btn" id="reset-cam">Reset</button>
+      <button class="dom-3d-btn exit-btn" id="exit-3d">Exit 3D</button>
+    </div>
+  `;
+  document.body.appendChild(hud);
+
+  // HUD Event Listeners
+  hud.querySelector("#layer-gap").addEventListener("input", (e) => {
+    state.spacing = parseFloat(e.target.value);
+    apply3DTransforms();
+  });
+
+  hud.querySelector("#zoom-range").addEventListener("input", (e) => {
+    state.zoom = parseFloat(e.target.value) / 100;
+    updateCamera();
+  });
+
+  // 4D Time Expansion (oscillates layers along time axis)
+  hud.querySelector("#pulse-slider").addEventListener("input", (e) => {
+    const val = parseFloat(e.target.value);
+    nodes.forEach((el, index) => {
+      const depth = getDepth(el);
+      const wave = Math.sin((index + val) * 0.25) * 15;
+      el.style.transform = `translateZ(${depth * state.spacing + wave}px)`;
+    });
+  });
+
+  hud.querySelector("#reset-cam").addEventListener("click", () => {
+    state.rotX = 35;
+    state.rotY = -35;
+    state.zoom = 0.85;
+    updateCamera();
+  });
+
+  hud.querySelector("#exit-3d").addEventListener("click", () => {
+    window.teardown3DView();
+  });
+
+  // Attach Listeners
+  window.addEventListener("mousedown", onMouseDown);
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+  window.addEventListener("wheel", onWheel, { passive: false });
+
+  // Initialize
+  apply3DTransforms();
+  updateCamera();
+
+  // Teardown Handler
+  window.teardown3DView = () => {
+    window.removeEventListener("mousedown", onMouseDown);
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+    window.removeEventListener("wheel", onWheel);
+
+    document.documentElement.classList.remove("dom-3d-active");
+    document.body.style.transform = "";
+
+    nodes.forEach((el) => {
+      el.classList.remove("dom-3d-node");
+      const orig = originalStyles.get(el);
+      if (orig) {
+        el.style.transform = orig.transform;
+        el.style.backgroundColor = orig.backgroundColor;
+      }
+    });
+
+    hud.remove();
+    window.__DOM_3D_ACTIVE__ = false;
+  };
+})();

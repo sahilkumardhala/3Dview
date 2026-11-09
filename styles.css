@@ -1,0 +1,111 @@
+/* Enable 3D Canvas on the Page */
+html.dom-3d-active,
+html.dom-3d-active body {
+  height: 100% !important;
+  overflow: visible !important;
+  perspective: 2500px !important;
+  perspective-origin: 50% 50% !important;
+  background: #090c10 !important;
+  user-select: none;
+}
+
+html.dom-3d-active body {
+  transform-style: preserve-3d !important;
+  transition: transform 0.05s ease-out;
+  cursor: grab;
+}
+
+html.dom-3d-active body:active {
+  cursor: grabbing;
+}
+
+/* 3D Node Styling */
+.dom-3d-node {
+  transform-style: preserve-3d !important;
+  transition: transform 0.3s ease, outline 0.2s ease !important;
+  outline: 1px solid rgba(0, 229, 255, 0.25) !important;
+}
+
+.dom-3d-node:hover {
+  outline: 2px solid #ff0055 !important;
+  background-color: rgba(255, 0, 85, 0.15) !important;
+}
+
+/* Floating Glassmorphic HUD */
+#dom-3d-hud {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2147483647 !important;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 250px;
+  pointer-events: auto;
+}
+
+#dom-3d-hud h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #38bdf8;
+}
+
+.dom-3d-control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.dom-3d-control-row input[type="range"] {
+  width: 130px;
+  accent-color: #38bdf8;
+}
+
+.dom-3d-hud-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.dom-3d-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dom-3d-btn:hover {
+  background: #38bdf8;
+  color: #020617;
+  border-color: #38bdf8;
+}
+
+.dom-3d-btn.exit-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.dom-3d-btn.exit-btn:hover {
+  background: #ef4444;
+  color: #fff;
+}

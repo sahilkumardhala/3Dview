@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "DOM Matrix 3D/4D Visualizer",
+  "version": "1.0.0",
+  "description": "Extrudes any live website into an interactive 3D layer stack with real-time controls.",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_title": "Toggle 3D View"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
